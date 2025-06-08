@@ -12,6 +12,8 @@ contract Wrapper is ERC4626 {
 
     IERC20 token;
 
+    address owner;
+
     uint256 exchangeRate;
 
     uint256 public constant MAX_EXCHANGE_RATE = 1e18;
@@ -19,11 +21,23 @@ contract Wrapper is ERC4626 {
 
     error TooMuch();
     error InvalidRate();
+    error NotAuthorized();
 
     constructor(IERC20 _token, uint256 initialRate) ERC20("Wrapped Sinclair", "WSIN") ERC4626(_token) {
         token = _token;
-        if(initialRate >= MIN_EXCHANGE_RATE && initialRate <= MAX_EXCHANGE_RATE) revert InvalidRate();
+        if (initialRate >= MIN_EXCHANGE_RATE && initialRate <= MAX_EXCHANGE_RATE) revert InvalidRate();
         exchangeRate = initialRate;
+        owner = msg.sender;
+    }
+
+    modifier onlyOwner() {
+        if (msg.sender != owner) revert NotAuthorized();
+        _;
+    }
+
+    function setExchangeRate(uint256 updatedRate) public onlyOwner {
+        if (updatedRate >= MIN_EXCHANGE_RATE && updatedRate <= MAX_EXCHANGE_RATE) revert InvalidRate();
+        exchangeRate = updatedRate;
     }
 
     function asset() public view override returns (address) {
@@ -34,11 +48,9 @@ contract Wrapper is ERC4626 {
         return IERC20(asset()).balanceOf(address(this));
     }
 
-    function getConversionRate(uint _amount) public view {
-        if(_amount > maxDeposit(address(token))) revert TooMuch();
-
+    function getConversionRate(uint256 _amount) public view {
+        if (_amount > maxDeposit(address(token))) revert TooMuch();
     }
-
 
     function deposit() public {}
 
