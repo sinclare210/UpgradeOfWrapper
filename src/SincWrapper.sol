@@ -7,23 +7,40 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ERC4626} from "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
 
-contract Wrapper is ERC4626{
+contract Wrapper is ERC4626 {
     using SafeERC20 for IERC20;
 
     IERC20 token;
 
-     constructor(IERC20 _token)
-        ERC20("Wrapped Sinclair", "WSIN")
-        ERC4626(_token)
-    {
+    uint256 exchangeRate;
+
+    uint256 public constant MAX_EXCHANGE_RATE = 1e18;
+    uint256 public constant MIN_EXCHANGE_RATE = 1;
+
+    error TooMuch();
+    error InvalidRate();
+
+    constructor(IERC20 _token, uint256 initialRate) ERC20("Wrapped Sinclair", "WSIN") ERC4626(_token) {
         token = _token;
+        if(initialRate >= MIN_EXCHANGE_RATE && initialRate <= MAX_EXCHANGE_RATE) revert InvalidRate();
+        exchangeRate = initialRate;
     }
 
-    function deposit () public {
+    function asset() public view override returns (address) {
+        return address(token);
+    }
+
+    function totalAssets() public view override returns (uint256) {
+        return IERC20(asset()).balanceOf(address(this));
+    }
+
+    function getConversionRate(uint _amount) public view {
+        if(_amount > maxDeposit(address(token))) revert TooMuch();
 
     }
 
-    function withdraw () public {
 
-    }
+    function deposit() public {}
+
+    function withdraw() public {}
 }
