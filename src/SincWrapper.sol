@@ -22,6 +22,7 @@ contract Wrapper is ERC4626 {
     error TooMuch();
     error InvalidRate();
     error NotAuthorized();
+    error CantSendZero();
 
     constructor(IERC20 _token, uint256 initialRate) ERC20("Wrapped Sinclair", "WSIN") ERC4626(_token) {
         token = _token;
@@ -40,19 +41,45 @@ contract Wrapper is ERC4626 {
         exchangeRate = updatedRate;
     }
 
-    function asset() public view override returns (address) {
-        return address(token);
+    function convertToShares(uint256 assets) public view override returns (uint256) {
+        return (assets * exchangeRate) / 1e18;
+    }
+
+    function convertToAssets(uint256 assets) public view override returns (uint256) {
+        return (assets * 1e18) / exchangeRate;
     }
 
     function totalAssets() public view override returns (uint256) {
         return IERC20(asset()).balanceOf(address(this));
     }
 
-    function getConversionRate(uint256 _amount) public view {
-        if (_amount > maxDeposit(address(token))) revert TooMuch();
+    function previewDeposit(uint256 _asset) public view override returns (uint256) {
+        return convertToShares(_asset);
     }
 
-    function deposit() public {}
+    function previewMint(uint256 _asset) public view override returns (uint256) {
+        return convertToAssets(_asset);
+    }
 
-    function withdraw() public {}
+    function previewWithdraw(uint256 _shares) public view override returns (uint256) {
+        return convertToAssets(_shares);
+    }
+
+    function previewRedeem(uint256 _shares) public view override returns (uint256) {
+        return convertToAssets(_shares);
+    }
+
+    function deposit(uint256 _asset) public {
+        if (_asset <= 0) revert CantSendZero();
+        token.safeTransferFrom(msg.sender, address(this), _asset);
+        uint256 shares = convertToShares(_asset);
+        _mint(msg.sender, shares);
+    }
+
+    function withdraw(uint256 shares) public {
+        if (shares == 0) revert CantSendZero();
+        uint256 assets = convertToAssets(shares);
+        _burn(msg.sender, shares);
+        token.safeTransfer(msg.sender, assets);
+    }
 }
