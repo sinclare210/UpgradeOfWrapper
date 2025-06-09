@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.27;
+pragma solidity ^0.8.28;
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -11,7 +11,7 @@ import {ERC4626} from "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.so
  * @notice Wraps an underlying ERC20 asset and issues shares based on an adjustable exchange rate
  * @dev Uses OpenZeppelin's ERC4626 standard with custom exchange rate logic
  */
-contract Wrapper is ERC4626 {
+contract SincWrapper is ERC4626 {
     using SafeERC20 for IERC20;
 
     /**
@@ -28,7 +28,7 @@ contract Wrapper is ERC4626 {
     /**
      * @notice Underlying asset token this vault accepts and manages
      */
-    IERC20 asset;
+    IERC20 token;
 
     /**
      * @notice Maximum allowed exchange rate (scaled by 1e18)
@@ -69,11 +69,11 @@ contract Wrapper is ERC4626 {
      * @param initialRate Initial exchange rate between assets and shares (scaled by 1e18)
      * @dev Reverts if initialRate is outside allowed bounds
      */
-    constructor(IERC20 _asset, uint256 initialRate) ERC20("Wrapped Sinclair", "WSIN") ERC4626(_asset) {
+    constructor(address _asset, uint256 initialRate) ERC20("Wrapped Sinclair", "WSIN") ERC4626(IERC20(_asset)) {
         if (initialRate < MIN_EXCHANGE_RATE || initialRate > MAX_EXCHANGE_RATE) {
             revert InvalidRate();
         }
-        asset = _asset;
+        token = IERC20(_asset);
         exchangeRate = initialRate;
         owner = msg.sender;
     }
@@ -155,7 +155,7 @@ contract Wrapper is ERC4626 {
     function deposit(uint256 assets) public {
         if (assets == 0) revert ZeroAmount();
 
-        asset.safeTransferFrom(msg.sender, address(this), assets);
+        token.safeTransferFrom(msg.sender, address(this), assets);
         uint256 shares = convertToShares(assets);
         _mint(msg.sender, shares);
     }
@@ -171,7 +171,7 @@ contract Wrapper is ERC4626 {
 
         uint256 assets = convertToAssets(shares);
         _burn(msg.sender, shares);
-        asset.safeTransfer(msg.sender, assets);
+        token.safeTransfer(msg.sender, assets);
     }
 
     /**
@@ -179,6 +179,6 @@ contract Wrapper is ERC4626 {
      * @return totalAssetsHeld The total underlying asset balance in the vault contract
      */
     function totalAssets() public view override returns (uint256) {
-        return asset.balanceOf(address(this));
+        return token.balanceOf(address(this));
     }
 }
