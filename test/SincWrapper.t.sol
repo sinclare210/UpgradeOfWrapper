@@ -3,6 +3,4 @@ pragma solidity ^0.8.27;
 
 import {Test, console} from "forge-std/Test.sol";
 
-contract SincWrapper is Test {
-    
-}
+contract SincWrapper is Test {}
