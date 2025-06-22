@@ -13,7 +13,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  */
 contract SincWrapper is ERC4626 {
     /**
-     * @notice Fixed exchange rate between assets and shares (e.g., 1 asset = X shares)
+     * @notice Fixed exchange rate between assets and shares
      */
     uint256 public immutable exchangeRate;
 
