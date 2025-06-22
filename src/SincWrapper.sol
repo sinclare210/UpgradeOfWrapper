@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
  * @title SincWrapper Vault
- * @author
+ * @author Sinclair Daemon
  * @notice A fixed-rate ERC4626-compliant vault for wrapping ERC20 tokens
  * @dev This vault overrides convertToShares and convertToAssets using a fixed exchange rate
  */
